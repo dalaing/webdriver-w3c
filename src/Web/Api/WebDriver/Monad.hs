@@ -129,6 +129,8 @@ import Control.Lens
   ( (^.), (^?) )
 import Control.Monad
   ( ap )
+import qualified Control.Monad.Catch as Catch
+  ( MonadThrow(..), MonadCatch(..))
 import Control.Monad.IO.Class
   ( MonadIO(..) )
 import Control.Monad.Trans.Class
@@ -217,6 +219,16 @@ instance
   (Monad eff, MonadTrans t, Monad (t eff), MonadFail (t eff))
     => MonadFail (WebDriverTT t eff) where
   fail = WDT . fail
+
+instance
+  (Monad eff, MonadTrans t, Monad (t eff))
+    => Catch.MonadThrow (WebDriverTT t eff) where
+  throwM = WDT . Catch.throwM
+
+instance
+  (Monad eff, MonadTrans t, Monad (t eff)) 
+    => Catch.MonadCatch (WebDriverTT t eff) where
+  catch act handler = WDT $ Catch.catch (unWDT act) (unWDT . handler)
 
 -- | Lift a value from the inner transformed monad
 liftWebDriverTT
